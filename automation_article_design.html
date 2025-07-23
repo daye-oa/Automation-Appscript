@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automating Client Consultations with Google Apps Script</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .article-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .intro {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            border-left: 4px solid #4f46e5;
+        }
+
+        .intro p {
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .step {
+            margin: 3rem 0;
+            position: relative;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .step h2 {
+            color: #1a1a1a;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .step p {
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+
+        .code-block {
+            background: #1a202c;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #48bb78, #38b2ac);
+        }
+
+        .code-block pre {
+            color: #e2e8f0;
+            font-family: 'Fira Code', Monaco, 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .code-lang {
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            color: #a0aec0;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fef5e7 0%, #fed7aa 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .highlight-box h3 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .results-section {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2.5rem 0;
+            border-left: 4px solid #10b981;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-item .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .conclusion {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2.5rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            color: #4f46e5;
+            transition: transform 0.3s ease;
+        }
+
+        .tech-item:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <article class="article-card">
+            <header class="header">
+                <h1>Automating Client Consultations</h1>
+                <div class="subtitle">A Complete Guide to Streamlining Your Business with Google Apps Script</div>
+            </header>
+
+            <div class="content">
+                <div class="intro">
+                    <p>As a business focused on managing client consultations, one of the biggest challenges I faced was keeping everything organized: sending confirmation emails, creating calendar events, and following up after consultations. While these are simple tasks, doing them manually for every consultation was both time-consuming and error-prone.</p>
+                    <p>That's when I decided to automate the entire workflow using Google Sheets and Google Apps Script.</p>
+                </div>
+
+                <div class="tech-stack">
+                    <div class="tech-item">Google Sheets</div>
+                    <div class="tech-item">Google Apps Script</div>
+                    <div class="tech-item">Google Calendar</div>
+                    <div class="tech-item">Gmail API</div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>📧 Automated Emails</h3>
+                        <p>Send confirmation emails to clients after booking consultations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📅 Calendar Integration</h3>
+                        <p>Automatically create Google Calendar events for each consultation</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔔 Smart Reminders</h3>
+                        <p>Send reminder and follow-up emails after consultations</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h2>Setting Up Google Sheets</h2>
+                    </div>
+                    <p>The first step was organizing the data in Google Sheets. This is where client information is stored, such as:</p>
+                    <ul style="margin-left: 2rem; color: #4a5568;">
+                        <li>Client Name</li>
+                        <li>Email Address</li>
+                        <li>Consultation Date</li>
+                        <li>Consultation Type</li>
+                        <li>Status (e.g., "Pending", "Completed")</li>
+                    </ul>
+                    <p>This was the foundation for automating the process.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h2>Automating Confirmation Emails</h2>
+                    </div>
+                    <p>Once a client books a consultation via the Google Form, their details are recorded in Google Sheets. I used Google Apps Script to automatically send a confirmation email once a form is submitted.</p>
+                    
+                    <div class="highlight-box">
+                        <h3>The Google Apps Script:</h3>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-lang">JavaScript</div>
+                        <pre><code>function sendConfirmationEmail() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Form Responses 1');
+  var lastRow = sheet.getLastRow();
+  var data = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn()).getValues();
+  
+  var clientName = data[0][2];  // Assuming client name is in the third column
+  var email = data[0][1];  // Assuming email is in the second column
+  var consultationDate = new Date(data[0][8]);  // Assuming the consultation date is in the ninth column
+  var consultationTime = data[0][9];  // Assuming the consultation time is in the tenth column
+  
+  var subject = 'Confirmation of Your Consultation with Kairos Cares';
+  var body = `
+    Dear ${clientName},
+    
+    Thank you for booking your consultation with Kairos Cares. Your consultation is confirmed for:
+    Date: ${consultationDate.toDateString()}
+    Time: ${consultationTime} (30 minutes)
+    
+    If you need to reschedule, please let us know.
+    
+    Best regards,
+    Kairos Cares Team
+  `;
+  
+  MailApp.sendEmail(email, subject, body);
+}</code></pre>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h3>How it Works:</h3>
+                        <p><strong>SpreadsheetApp.getActiveSpreadsheet():</strong> Accesses the active Google Sheet.</p>
+                        <p><strong>MailApp.sendEmail():</strong> Sends an email to the client with the consultation details.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h2>Creating Google Calendar Events</h2>
+                    </div>
+                    <p>To avoid manual calendar entries, I used Google Apps Script to create a Google Calendar event for each consultation.</p>
+
+                    <div class="code-block">
+                        <div class="code-lang">JavaScript</div>
+                        <pre><code>function createCalendarEvent() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Form Responses 1');
+  var lastRow = sheet.getLastRow();
+  var data = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn()).getValues();
+  
+  var consultationDate = new Date(data[0][8]);  // Consultation date in the ninth column
+  var consultationTime = data[0][9];  // Consultation time in the tenth column
+  var email = data[0][1];  // Client email
+  
+  var consultationDateTime = new Date(consultationDate);
+  var timeParts = consultationTime.split(":");
+  consultationDateTime.setHours(timeParts[0]);
+  consultationDateTime.setMinutes(timeParts[1]);
+
+  var calendar = CalendarApp.getDefaultCalendar();
+  calendar.createEvent(
+    'Consultation with Kairos Cares',  // Event Title
+    consultationDateTime,  // Start Time
+    new Date(consultationDateTime.getTime() + 30 * 60 * 1000), // End Time (30 minutes later)
+    {description: 'Consultation to discuss personalized care options', location: 'Kairos Cares', guests: email}  // Event Details
+  );
+}</code></pre>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h3>How it Works:</h3>
+                        <p>This script grabs the consultation date and time from the Google Sheet and creates a Google Calendar event for each consultation.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h2>Sending Follow-up and Reminder Emails</h2>
+                    </div>
+                    <p>Once consultations are confirmed and scheduled, we can send reminder emails 24 hours before the meeting and follow-up emails after the consultation.</p>
+
+                    <div class="highlight-box">
+                        <h3>Reminder Email Script:</h3>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-lang">JavaScript</div>
+                        <pre><code>function sendReminderEmail() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Form Responses 1');
+  var data = sheet.getDataRange().getValues();
+  var today = new Date();
+  
+  for (var i = 1; i < data.length; i++) {
+    var consultationDate = new Date(data[i][8]);
+    var email = data[i][1];
+    var clientName = data[i][2];
+    var consultationTime = data[i][9];
+    
+    var timeDiff = Math.round((consultationDate - today) / (1000 * 3600 * 24));
+    
+    if (timeDiff === 1) {
+      var subject = 'Reminder: Your Consultation Tomorrow';
+      var body = `
+        Dear ${clientName},
+        
+        This is a reminder that your consultation with Kairos Cares is scheduled for tomorrow:
+        Date: ${consultationDate.toDateString()}
+        Time: ${consultationTime} (30 minutes)
+        
+        Looking forward to connecting with you!
+        
+        Best regards,
+        Kairos Cares Team
+      `;
+      MailApp.sendEmail(email, subject, body);
+    }
+  }
+}</code></pre>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h3>Follow-Up Email Script:</h3>
+                        <p>This script sends a follow-up email after the consultation has occurred.</p>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-lang">JavaScript</div>
+                        <pre><code>function sendFollowUpEmail() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Form Responses 1');
+  var data = sheet.getDataRange().getValues();
+  var today = new Date();
+  
+  for (var i = 1; i < data.length; i++) {
+    var consultationDate = new Date(data[i][8]);
+    var email = data[i][1];
+    var clientName = data[i][2];
+    
+    var timeDiff = (today - consultationDate) / (1000 * 3600 * 24);
+    
+    if (timeDiff === 3) {
+      var subject = 'We'd Love Your Feedback on Your Recent Consultation';
+      var body = `
+        Dear ${clientName},
+        
+        We hope your consultation with Kairos Cares was helpful. We'd love to hear your feedback to help us improve.
+        
+        Please take a moment to fill out our feedback form [link].
+        
+        Best regards,
+        Kairos Cares Team
+      `;
+      MailApp.sendEmail(email, subject, body);
+    }
+  }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <h2>Results and Impact</h2>
+                    </div>
+
+                    <div class="results-section">
+                        <h3 style="color: #065f46; margin-bottom: 1rem;">By automating these tasks, we've saved significant time and reduced the risk of human error. The system:</h3>
+                        
+                        <div class="results-grid">
+                            <div class="result-item">
+                                <div class="icon">📅</div>
+                                <strong>Automatically creates calendar events</strong>
+                            </div>
+                            <div class="result-item">
+                                <div class="icon">📧</div>
+                                <strong>Sends timely confirmation and reminder emails</strong>
+                            </div>
+                            <div class="result-item">
+                                <div class="icon">📝</div>
+                                <strong>Automatically sends follow-up emails to gather feedback</strong>
+                            </div>
+                        </div>
+
+                        <h3 style="color: #065f46; margin: 1.5rem 0 1rem 0;">Results:</h3>
+                        <ul style="color: #047857; margin-left: 2rem;">
+                            <li>Increased efficiency by eliminating manual tasks</li>
+                            <li>Reduced no-shows through reminders</li>
+                            <li>Improved client engagement with automated follow-ups</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="conclusion">
+                    <h2 style="color: #1a1a1a; margin-bottom: 1rem;">Conclusion</h2>
+                    <p>Using Google Apps Script with Google Sheets has helped automate our consultation booking process, making our business more efficient and data-driven. Whether you're a business owner or a developer, automating tasks like email sending, calendar scheduling, and follow-ups can free up valuable time and enhance client satisfaction.</p>
+                </div>
+            </div>
+        </article>
+    </div>
+</body>
+</html>
